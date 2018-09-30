@@ -1,7 +1,10 @@
+import locale
 import os
 import re
 import sys
 import time
+from datetime import date
+from io import TextIOBase
 from typing import List, Optional
 
 from PyOrgMode import OrgDataStructure, OrgDate, OrgDrawer, OrgNode
@@ -23,8 +26,15 @@ REVERSE_ITEM_LOCATION = False
 # /tasks.org/Top Heading/Second Heading/Third Heading/
 INCLUDE_FILE_NAME = False
 
+# Character to put on the both sides of item's location. E.g. '*', '/' or '='
+WRAP_ITEM_LOCATION_IN = '='
+
 # Regex for timestamps on the first line of an item
 TIMESTAMP_RE = re.compile('\[[^\]]+]')
+
+# Locale, used for writing names of months and week days.
+# E.g. ('en_US', 'UTF-8')
+LOCALE = locale.getlocale()
 
 # /Settings
 
@@ -52,6 +62,10 @@ class LogItem:
 
         return loc
 
+    @property
+    def date(self) -> date:
+        return date(self.time.tm_year, self.time.tm_mon, self.time.tm_mday)
+
     def output(self) -> str:
         """Returns the string representation on this item as should be written
         to the stdout.
@@ -66,7 +80,7 @@ class LogItem:
         if REVERSE_ITEM_LOCATION:
             location = list(reversed(location))
 
-        output += self.INDENT + '/' + '/'.join(location) + '/\n'
+        output += self.INDENT + WRAP_ITEM_LOCATION_IN + '/'.join(location) + WRAP_ITEM_LOCATION_IN + '\n'
         return output
 
 
@@ -144,14 +158,48 @@ def traverse_file(path: str) -> List[LogItem]:
     return traverse_node(org_file.root, [], path)
 
 
+def write_as_tree(log_items: List[LogItem], out: TextIOBase):
+    def write_date_headings(d: date, upto: str):
+        if upto == 'day':
+            out.write('*** {}\n'.format(d.strftime('%Y-%m-%d %A')))
+        elif upto == 'month':
+            out.write('** {}\n'.format(d.strftime('%Y-%m %B')))
+            out.write('*** {}\n'.format(d.strftime('%Y-%m-%d %A')))
+        elif upto == 'year':
+            out.write('* {}\n'.format(d.strftime('%Y')))
+            out.write('** {}\n'.format(d.strftime('%Y-%m %B')))
+            out.write('*** {}\n'.format(d.strftime('%Y-%m-%d %A')))
+        else:
+            raise ValueError(upto)
+
+    last_date = None
+    for item in log_items:
+        if last_date is None:
+            last_date = item.date
+            write_date_headings(item.date, upto='year')
+
+        if last_date != item.date:
+            if last_date.year != item.date.year:
+                write_date_headings(item.date, upto='year')
+            elif last_date.month != item.date.month:
+                write_date_headings(item.date, upto='month')
+            elif last_date.day != item.date.day:
+                write_date_headings(item.date, upto='day')
+            last_date = item.date
+
+        out.write(item.output())
+        out.flush()
+
+
 def main():
+    locale.setlocale(locale.LC_ALL, LOCALE)
+
     log_items = []
     for arg in sys.argv:
         log_items += traverse_file(arg)
 
     log_items.sort(key=lambda item: item.time)
-    for item in log_items:
-        print(item.output(), end='')
+    write_as_tree(log_items, sys.stdout)
 
 if __name__ == '__main__':
     main()
