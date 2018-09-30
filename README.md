@@ -12,7 +12,7 @@ Given this file:
 :LOGBOOK:
 - Note taken on [2018-01-01 Mon 20:00] \\
   Started working on the task.
-- State from TODO to DONE [2018-01-01 Mon 21:00] \\
+- State "DONE" from "TODO" [2018-01-01 Mon 21:00] \\
   Wasn't that hard.
 :END:
 
@@ -39,13 +39,33 @@ This script produces this file:
   Note taken on [2018-01-01 Mon 20:00] \\
   Started working on the task.
 - =Task 1/Project A=
-  State from TODO to DONE [2018-01-01 Mon 21:00] \\
+  State "DONE" from "TODO" [2018-01-01 Mon 21:00] \\
   Wasn't that hard.
 
 *** 2018-01-02 Tuesday
 
 - =Task 2/Project B=
   Note taken on [2018-01-02 Tue 20:00] \\
+  This task will have to wait.
+```
+
+Or with `SMART_FORMAT` set to `True`:
+
+```org
+* 2018
+
+** 2018-01 January
+
+*** 2018-01-01 Monday
+
+- [2018-01-01 Mon 20:00] Note =Task 1/Project A=
+  Started working on the task.
+- [2018-01-01 Mon 21:00] "DONE" =Task 1/Project A=
+  Wasn't that hard.
+
+*** 2018-01-02 Tuesday
+
+- [2018-01-02 Tue 20:00] Note =Task 2/Project B=
   This task will have to wait.
 ```
 

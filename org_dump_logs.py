@@ -39,12 +39,17 @@ LOCALE = locale.getlocale()
 # Org title template
 TITLE = 'Logs from {filenames}'
 
+# If True, the script will parse log items to output them in a more readable way.
+# Only works with 'Note taken on ...' and 'State "..." from "..."' at the moment.
+SMART_FORMAT = True
+
 # /Settings
 
 
 class LogItem:
     """Struct class for a log item"""
     INDENT = '  '
+    STATE_RE = re.compile('^- State "([^"]+)"')
 
     def __init__(self, lines: List[str], headings: List[OrgNode.Element],
                  filepath: str):
@@ -73,20 +78,42 @@ class LogItem:
     def date(self) -> date:
         return date(self.time.tm_year, self.time.tm_mon, self.time.tm_mday)
 
-    def output(self) -> str:
-        """Returns the string representation on this item as should be written
-        to the stdout.
-        """
+    def output_location(self) -> str:
         location = self.location
         if not INCLUDE_FILE_NAME:
             location = location[1:]
         if REVERSE_ITEM_LOCATION:
             location = list(reversed(location))
         location_str = '/'.join(location)
+        return WRAP_ITEM_LOCATION_IN + location_str + WRAP_ITEM_LOCATION_IN
 
-        output = '- ' + WRAP_ITEM_LOCATION_IN + location_str + WRAP_ITEM_LOCATION_IN + '\n'
+    def output(self) -> str:
+        """Returns the string representation on this item as should be written
+        to the stdout.
+        """
+        output = '- ' + self.output_location() + '\n'
         output += self.INDENT + self.lines[0][2:] + '\n'
         for line in self.lines[1:]:
+            output += self.INDENT + line + '\n'
+
+        return output
+
+    def output_smart(self) -> str:
+        if self.lines[0].startswith('- Note taken'):
+            item_type = 'Note'
+        else:
+            state_match = self.STATE_RE.search(self.lines[0])
+            if state_match:
+                item_type = '"' + state_match.group(1) + '"'
+            else:
+                item_type = 'Note'
+
+        timestamp_str = TIMESTAMP_RE.search(self.lines[0]).group(0)
+        content = self.lines[1:]
+
+        output = '- {} {} {}\n'.format(timestamp_str, item_type,
+                                       self.output_location())
+        for line in content:
             output += self.INDENT + line + '\n'
 
         return output
@@ -195,7 +222,11 @@ def write_as_tree(log_items: List[LogItem], out: TextIOBase):
                 write_date_headings(item.date, upto='day')
             last_date = item.date
 
-        out.write(item.output())
+        if SMART_FORMAT:
+            out.write(item.output_smart())
+        else:
+            out.write(item.output())
+
         out.flush()
 
 
