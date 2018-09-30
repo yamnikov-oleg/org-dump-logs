@@ -20,7 +20,7 @@ CLOCK_PREFIX = 'CLOCK:'
 # If True, item's location will be reversed
 # from /Top Heading/Second Heading/Third Heading/
 # to   /Third Heading/Second Heading/Top Heading/
-REVERSE_ITEM_LOCATION = False
+REVERSE_ITEM_LOCATION = True
 
 # If True, item's file name will be included in its location
 # /tasks.org/Top Heading/Second Heading/Third Heading/
@@ -36,7 +36,11 @@ TIMESTAMP_RE = re.compile('\[[^\]]+]')
 # E.g. ('en_US', 'UTF-8')
 LOCALE = locale.getlocale()
 
+# Org title template
+TITLE = 'Logs from {filenames}'
+
 # /Settings
+
 
 class LogItem:
     """Struct class for a log item"""
@@ -80,7 +84,8 @@ class LogItem:
         if REVERSE_ITEM_LOCATION:
             location = list(reversed(location))
 
-        output += self.INDENT + WRAP_ITEM_LOCATION_IN + '/'.join(location) + WRAP_ITEM_LOCATION_IN + '\n'
+        output += self.INDENT + WRAP_ITEM_LOCATION_IN + '/'.join(
+            location) + WRAP_ITEM_LOCATION_IN + '\n'
         return output
 
 
@@ -101,8 +106,8 @@ def try_parse_datetime(log_line: str) -> Optional[time.struct_time]:
         return None
 
 
-def parse_drawer(drawer: OrgDrawer.Element,
-                 headings: List[OrgNode.Element], filepath: str) -> List[LogItem]:
+def parse_drawer(drawer: OrgDrawer.Element, headings: List[OrgNode.Element],
+                 filepath: str) -> List[LogItem]:
     """Parses the logbook drawer and returns all the log items in it."""
     items = []
     current_item_lines = []
@@ -132,8 +137,8 @@ def parse_drawer(drawer: OrgDrawer.Element,
     return items
 
 
-def traverse_node(node: OrgNode.Element,
-                  headings: List[OrgNode.Element], filepath: str) -> List[LogItem]:
+def traverse_node(node: OrgNode.Element, headings: List[OrgNode.Element],
+                  filepath: str) -> List[LogItem]:
     """Parses the given heading node and returns all the log items in it."""
     headings_with_self = headings + [node]
     if node.heading == '':
@@ -193,13 +198,26 @@ def write_as_tree(log_items: List[LogItem], out: TextIOBase):
 
 def main():
     locale.setlocale(locale.LC_ALL, LOCALE)
+    filepaths = sys.argv
 
     log_items = []
-    for arg in sys.argv:
-        log_items += traverse_file(arg)
+    for path in filepaths:
+        log_items += traverse_file(path)
+
+    filenames = []
+    for path in filepaths:
+        name = os.path.basename(path)
+        filenames.append(name)
+
+    title = TITLE.format(filenames=', '.join(filenames))
+    sys.stdout.write('#+TITLE: {}\n'.format(title))
+    sys.stdout.write('#+DATE: {}\n'.format(date.today().strftime('%Y-%m-%d')))
+    sys.stdout.write('\n')
+    sys.stdout.flush()
 
     log_items.sort(key=lambda item: item.time)
     write_as_tree(log_items, sys.stdout)
+
 
 if __name__ == '__main__':
     main()
