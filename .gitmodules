@@ -1,0 +1,3 @@
+[submodule "PyOrgMode"]
+	path = PyOrgMode
+	url = https://github.com/bjonnh/PyOrgMode
