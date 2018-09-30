@@ -46,16 +46,19 @@ class LogItem:
     """Struct class for a log item"""
     INDENT = '  '
 
-    def __init__(self, time: time.struct_time, lines: List[str],
-                 headings: List[OrgNode.Element], filepath: str):
+    def __init__(self, lines: List[str], headings: List[OrgNode.Element],
+                 filepath: str):
         # The timestamp of this item
-        self.time = time
+        self.time = try_parse_datetime(lines[0])
         # The text of this item
-        self.lines = lines
+        self.lines = list(lines)
         # The list of heading nodes of this item from top down
         self.headings = headings
         # The path to the file, where this item has been read
         self.filepath = filepath
+
+        if not self.time:
+            raise ValueError("No timestamp: {}".format(lines[0]))
 
     @property
     def location(self) -> List[str]:
@@ -125,13 +128,13 @@ def parse_drawer(drawer: OrgDrawer.Element, headings: List[OrgNode.Element],
             continue
 
         if current_item_lines:
-            item = LogItem(time, current_item_lines, headings, filepath)
+            item = LogItem(current_item_lines, headings, filepath)
             items.append(item)
 
         current_item_lines = [line]
 
     if current_item_lines:
-        item = LogItem(time, current_item_lines, headings, filepath)
+        item = LogItem(current_item_lines, headings, filepath)
         items.append(item)
 
     return items
