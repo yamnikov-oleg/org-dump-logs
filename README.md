@@ -6,7 +6,9 @@ Given this file:
 
 ```org
 * Project A
+
 ** DONE Task 1
+
 :LOGBOOK:
 - Note taken on [2018-01-01 Mon 20:00] \\
   Started working on the task.
@@ -15,7 +17,9 @@ Given this file:
 :END:
 
 * Project B
+
 ** TODO Task 2
+
 :LOGBOOK:
 - Note taken on [2018-01-02 Tue 20:00] \\
   This task will have to wait.
@@ -26,15 +30,20 @@ This script produces this file:
 
 ```org
 * 2018
+
 ** 2018-01 January
+
 *** 2018-01-01 Monday
+
 - Note taken on [2018-01-01 Mon 20:00] \\
   Started working on the task.
   =Task 1/Project A=
 - State from TODO to DONE [2018-01-01 Mon 21:00] \\
   Wasn't that hard.
   =Task 1/Project A=
+
 *** 2018-01-02 Tuesday
+
 - Note taken on [2018-01-02 Tue 20:00] \\
   This task will have to wait.
   =Task 2/Project B=
