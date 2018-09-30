@@ -77,18 +77,18 @@ class LogItem:
         """Returns the string representation on this item as should be written
         to the stdout.
         """
-        output = self.lines[0] + '\n'
-        for line in self.lines[1:]:
-            output += self.INDENT + line + '\n'
-
         location = self.location
         if not INCLUDE_FILE_NAME:
             location = location[1:]
         if REVERSE_ITEM_LOCATION:
             location = list(reversed(location))
+        location_str = '/'.join(location)
 
-        output += self.INDENT + WRAP_ITEM_LOCATION_IN + '/'.join(
-            location) + WRAP_ITEM_LOCATION_IN + '\n'
+        output = '- ' + WRAP_ITEM_LOCATION_IN + location_str + WRAP_ITEM_LOCATION_IN + '\n'
+        output += self.INDENT + self.lines[0][2:] + '\n'
+        for line in self.lines[1:]:
+            output += self.INDENT + line + '\n'
+
         return output
 
 
