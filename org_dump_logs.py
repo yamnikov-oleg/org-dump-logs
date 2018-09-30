@@ -198,7 +198,7 @@ def write_as_tree(log_items: List[LogItem], out: TextIOBase):
 
 def main():
     locale.setlocale(locale.LC_ALL, LOCALE)
-    filepaths = sys.argv
+    filepaths = sys.argv[1:]
 
     log_items = []
     for path in filepaths:
